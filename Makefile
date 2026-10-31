@@ -14,9 +14,9 @@ deploy:
 	kubectl rollout status deployment/userservice --timeout=300s
 	kubectl rollout status deployment/frontend --timeout=300s
 	kubectl rollout status deployment/contacts --timeout=300s
-	kubectl rollout status deployment/balancereader --timeout=300s
+	kubectl rollout status deployment/balancereader --timeout=900s
 	kubectl rollout status deployment/ledgerwriter --timeout=300s
-	kubectl rollout status deployment/transactionhistory --timeout=300s
+	kubectl rollout status deployment/transactionhistory --timeout=900s
 
 rollback:
 	kubectl rollout undo deployment/userservice
