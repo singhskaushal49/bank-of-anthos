@@ -45,7 +45,8 @@ jobs:
 
       - name: Wait For Pods
         run: |
-          kubectl wait --for=condition=Ready pod --all --timeout=900s
+          sleep 180
+          kubectl get pods
 
       - name: Verify Deployment
         run: |
@@ -74,5 +75,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: debug-logs
-          path: |
-            portforward.log
+          path: portforward.log

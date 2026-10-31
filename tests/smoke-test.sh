@@ -3,16 +3,10 @@
 set -e
 
 echo "Checking Kubernetes resources"
-
 kubectl get pods
 kubectl get svc
 
-echo "Waiting for frontend"
-
-sleep 20
-
 echo "Testing frontend"
-
 curl -f http://localhost:8080
 
 echo "Signup Test Passed"
