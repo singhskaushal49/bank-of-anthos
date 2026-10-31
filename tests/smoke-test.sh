@@ -2,11 +2,13 @@
 
 set -e
 
-echo "Checking Kubernetes resources"
+echo "Checking Pods"
 kubectl get pods
+
+echo "Checking Services"
 kubectl get svc
 
-echo "Testing frontend"
+echo "Checking Frontend"
 curl -f http://localhost:8080
 
 echo "Signup Test Passed"

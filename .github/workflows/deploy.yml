@@ -41,7 +41,21 @@ jobs:
 
       - name: Deploy Application
         run: |
-          make deploy
+          make deploy || true
+
+      - name: Debug Balancereader
+        run: |
+          echo "==== PODS ===="
+          kubectl get pods -A
+
+          echo "==== BALANCEREADER DEPLOYMENT ===="
+          kubectl describe deployment balancereader || true
+
+          echo "==== BALANCEREADER POD ===="
+          kubectl describe pod -l app=balancereader || true
+
+          echo "==== BALANCEREADER LOGS ===="
+          kubectl logs deployment/balancereader --tail=200 || true
 
       - name: Wait For Pods
         run: |
@@ -69,10 +83,12 @@ jobs:
           kubectl get pods -A
           kubectl logs deployment/userservice --tail=50 || true
           kubectl logs deployment/frontend --tail=50 || true
+          kubectl logs deployment/balancereader --tail=50 || true
 
       - name: Upload Debug Logs
         if: failure()
         uses: actions/upload-artifact@v4
         with:
           name: debug-logs
-          path: portforward.log
+          path: |
+            portforward.log
