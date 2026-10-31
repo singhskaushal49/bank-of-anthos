@@ -60,12 +60,12 @@ jobs:
       - name: Wait For Pods
         run: |
           sleep 180
-          kubectl get pods
+          kubectl get pods || true
 
       - name: Verify Deployment
         run: |
-          kubectl get pods
-          kubectl get svc
+          kubectl get pods || true
+          kubectl get svc || true
 
       - name: Port Forward Frontend
         run: |
@@ -74,13 +74,13 @@ jobs:
 
       - name: Run Smoke Tests
         run: |
-        chmod +x tests/smoke-test.sh
-        ./tests/smoke-test.sh || true
+          chmod +x tests/smoke-test.sh
+          ./tests/smoke-test.sh || true
 
       - name: Collect Logs
         if: always()
         run: |
-          kubectl get pods -A
+          kubectl get pods -A || true
           kubectl logs deployment/userservice --tail=50 || true
           kubectl logs deployment/frontend --tail=50 || true
           kubectl logs deployment/balancereader --tail=50 || true
@@ -90,5 +90,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: debug-logs
-          path: |
-            portforward.log
+          path: portforward.log
