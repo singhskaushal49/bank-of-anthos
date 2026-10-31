@@ -1,12 +1,16 @@
-name: Bank of Anthos CI
+name: Bank of Anthos CI/CD
 
 on:
   push:
     branches:
       - main
 
+  pull_request:
+    branches:
+      - main
+
 jobs:
-  deploy:
+  build-deploy-test:
     runs-on: ubuntu-latest
 
     steps:
@@ -17,25 +21,58 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: '17'
+          java-version: "17"
 
       - name: Build Application
-        run: ./mvnw clean package
+        run: |
+          chmod +x mvnw
+          ./mvnw clean package -DskipTests
+
+      - name: Install kubectl
+        uses: azure/setup-kubectl@v4
 
       - name: Create Kind Cluster
         uses: helm/kind-action@v1
 
+      - name: Verify Cluster
+        run: |
+          kubectl cluster-info
+          kubectl get nodes
+
       - name: Deploy Application
         run: |
           make deploy
+
+      - name: Wait For Pods
+        run: |
+          kubectl wait --for=condition=Ready pod --all --timeout=900s
 
       - name: Verify Deployment
         run: |
           kubectl get pods
           kubectl get svc
 
-      - name: Smoke Test
+      - name: Port Forward Frontend
         run: |
-          echo "Signup Test"
-          echo "Login Test"
-          echo "Transfer Test"
+          kubectl port-forward svc/frontend 8080:80 > portforward.log 2>&1 &
+          sleep 30
+
+      - name: Run Smoke Tests
+        run: |
+          chmod +x tests/smoke-test.sh
+          ./tests/smoke-test.sh
+
+      - name: Collect Logs
+        if: always()
+        run: |
+          kubectl get pods -A
+          kubectl logs deployment/userservice --tail=50 || true
+          kubectl logs deployment/frontend --tail=50 || true
+
+      - name: Upload Debug Logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: debug-logs
+          path: |
+            portforward.log
