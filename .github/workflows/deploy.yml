@@ -14,39 +14,47 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # Checkout source code
       - name: Checkout Source
         uses: actions/checkout@v4
 
+      # Setup Java
       - name: Setup Java
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: "17"
 
+      # Build application
       - name: Build Application
         run: |
           chmod +x mvnw
           ./mvnw clean package -DskipTests
 
+      # Install kubectl
       - name: Install kubectl
         uses: azure/setup-kubectl@v4
 
+      # Create Kind Cluster
       - name: Create Kind Cluster
         uses: helm/kind-action@v1
 
+      # Verify Kind Cluster
       - name: Verify Cluster
         run: |
           kubectl cluster-info
           kubectl get nodes
 
+      # Deploy Application
       - name: Deploy Application
         run: |
           make deploy || true
 
+      # Debug Deployment
       - name: Debug Balancereader
         run: |
           echo "==== PODS ===="
-          kubectl get pods -A
+          kubectl get pods -A || true
 
           echo "==== BALANCEREADER DEPLOYMENT ===="
           kubectl describe deployment balancereader || true
@@ -57,26 +65,31 @@ jobs:
           echo "==== BALANCEREADER LOGS ===="
           kubectl logs deployment/balancereader --tail=200 || true
 
+      # Wait for startup
       - name: Wait For Pods
         run: |
           sleep 180
           kubectl get pods || true
 
+      # Verify deployment
       - name: Verify Deployment
         run: |
           kubectl get pods || true
           kubectl get svc || true
 
+      # Port forward frontend
       - name: Port Forward Frontend
         run: |
           kubectl port-forward svc/frontend 8080:80 > portforward.log 2>&1 &
           sleep 30
 
+      # Smoke tests
       - name: Run Smoke Tests
         run: |
           chmod +x tests/smoke-test.sh
           ./tests/smoke-test.sh || true
 
+      # Collect logs
       - name: Collect Logs
         if: always()
         run: |
@@ -85,6 +98,7 @@ jobs:
           kubectl logs deployment/frontend --tail=50 || true
           kubectl logs deployment/balancereader --tail=50 || true
 
+      # Upload logs if failure happens
       - name: Upload Debug Logs
         if: failure()
         uses: actions/upload-artifact@v4
